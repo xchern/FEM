@@ -18,7 +18,7 @@ def readInpFileRaw(filename):
     elementSets = {}
     def elementRead(t, tp, tag):
         i = int(t[0])
-        v = tuple(map(int, t[1:]))
+        v = list(map(int, t[1:]))
         elements[i] = (tp, v)
         # if tag in elementSets:
         #     elementSets[tag] += [i]
@@ -66,7 +66,7 @@ def readInpFileRaw(filename):
             if t[0][0] == '*': # new part
                 head = t[0][1:]
                 para = {k:v for p in t[1:]
-                        for k, v in (p.split('='),)
+                        for k, v in (p.split('=', maxsplit=1),)
                         }
                 if not dispatchSection(head, para):
                     print("ignoring unknown part", l)
@@ -97,7 +97,7 @@ def readInpFile(filename):
     nodes_ = np.array([nodes[o] for o in ns])
     nmap = {o: n for n, o in list(enumerate(ns))}
     for k in elements:
-        elements[k] = (elements[k][0], tuple((nmap[o] for o in elements[k][1])))
+        elements[k] = (elements[k][0], [nmap[o] for o in elements[k][1]])
     for k in nodeSets:
         nodeSets[k] = [nmap[o] for o in nodeSets[k]]
 
@@ -108,20 +108,23 @@ def readInpFile(filename):
 
     return nodes_, nodeSets, elements_, elementSets
 
-if __name__ = '__main__':
-    import matplotlib.pyplot as plt
-
+if __name__ == '__main__':
     filename = 'test.inp'
     nodes, nodeSets, elements, elementSets = readInpFile(filename)
 
+    import matplotlib.pyplot as plt
+
     plt.subplot(121).set_aspect('equal')
+    plt.scatter(nodes[:,0], nodes[:,1])
     for k in list(nodeSets)[::-1]:
         nodeSet = nodes[nodeSets[k]]
         plt.scatter(nodeSet[:,0], nodeSet[:,1])
-    plt.legend(list(nodeSets)[::-1], loc='best')
+    plt.legend(['all'] + list(nodeSets)[::-1], loc='best')
+    for i, p in enumerate(nodes):
+        plt.text(p[0], p[1], r'$\leftarrow$'+str(i))
 
     plt.subplot(122).set_aspect('equal')
     for e in elements:
-        nL = nodes[list(e[1])]
+        nL = nodes[e[1]]
         plt.plot(nL[:,0].T, nL[:,1].T)
     plt.show()
