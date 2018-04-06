@@ -9,6 +9,8 @@ filename = 'test.inp'
 
 nodes, nodeSets, elements, elementSets = readInpFile(filename)
 nodes = nodes[:,:2]
+print(len(nodes), "nodes")
+print(len(elements), "elements")
 
 def showShape():
     plt.subplot(121).set_aspect('equal')
@@ -114,16 +116,18 @@ mat = mat.tocsr()
 
 rhs[indices] = 0
 
-# show load
-plt.subplot(121).set_aspect('equal')
-plt.title("F_u")
-plt.scatter(nodes[:,0],nodes[:,1],c=rhs[::2])
-plt.colorbar()
-plt.subplot(122).set_aspect('equal')
-plt.title("F_v")
-plt.scatter(nodes[:,0],nodes[:,1],c=rhs[1::2])
-plt.colorbar()
-plt.show()
+def showLoad():
+    plt.subplot(121).set_aspect('equal')
+    plt.title("F_u")
+    plt.scatter(nodes[:,0],nodes[:,1],c=rhs[::2])
+    plt.colorbar()
+    plt.subplot(122).set_aspect('equal')
+    plt.title("F_v")
+    plt.scatter(nodes[:,0],nodes[:,1],c=rhs[1::2])
+    plt.colorbar()
+    plt.show()
+
+# showLoad()
 
 print("solving linear system")
 import scipy.sparse.linalg
