@@ -109,22 +109,4 @@ def readInpFile(filename):
     return nodes_, nodeSets, elements_, elementSets
 
 if __name__ == '__main__':
-    filename = 'test.inp'
-    nodes, nodeSets, elements, elementSets = readInpFile(filename)
-
-    import matplotlib.pyplot as plt
-
-    plt.subplot(121).set_aspect('equal')
-    plt.scatter(nodes[:,0], nodes[:,1])
-    for k in list(nodeSets)[::-1]:
-        nodeSet = nodes[nodeSets[k]]
-        plt.scatter(nodeSet[:,0], nodeSet[:,1])
-    plt.legend(['all'] + list(nodeSets)[::-1], loc='best')
-    for i, p in enumerate(nodes):
-        plt.text(p[0], p[1], r'$\leftarrow$'+str(i))
-
-    plt.subplot(122).set_aspect('equal')
-    for e in elements:
-        nL = nodes[e[1]]
-        plt.plot(nL[:,0].T, nL[:,1].T)
-    plt.show()
+    nodes, nodeSets, elements, elementSets = readInpFile('test.inp')
