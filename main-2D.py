@@ -28,7 +28,7 @@ def showShape():
 
 nN = len(nodes)
 
-if nN < 300:
+if nN < 100:
     showShape()
 
 print('constructing linear system...')
@@ -114,6 +114,17 @@ mat = mat.tocsr()
 
 rhs[indices] = 0
 
+# show load
+plt.subplot(121).set_aspect('equal')
+plt.title("F_u")
+plt.scatter(nodes[:,0],nodes[:,1],c=rhs[::2])
+plt.colorbar()
+plt.subplot(122).set_aspect('equal')
+plt.title("F_v")
+plt.scatter(nodes[:,0],nodes[:,1],c=rhs[1::2])
+plt.colorbar()
+plt.show()
+
 print("solving linear system")
 import scipy.sparse.linalg
 
@@ -124,21 +135,13 @@ x = sparse.linalg.spsolve(mat, rhs)
 
 x.shape = (nN, 2)
 
-rhs.shape = (nN, 2)
-plt.subplot(221).set_aspect('equal')
+# show result
+plt.subplot(121).set_aspect('equal')
 plt.title("u")
 plt.scatter(nodes[:,0],nodes[:,1],c=x[:,0])
 plt.colorbar()
-plt.subplot(222).set_aspect('equal')
+plt.subplot(122).set_aspect('equal')
 plt.title("v")
 plt.scatter(nodes[:,0],nodes[:,1],c=x[:,1])
-plt.colorbar()
-plt.subplot(223).set_aspect('equal')
-plt.title("F_u")
-plt.scatter(nodes[:,0],nodes[:,1],c=rhs[:,0])
-plt.colorbar()
-plt.subplot(224).set_aspect('equal')
-plt.title("F_v")
-plt.scatter(nodes[:,0],nodes[:,1],c=rhs[:,1])
 plt.colorbar()
 plt.show()

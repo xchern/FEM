@@ -1,5 +1,5 @@
 *Heading
- C:\Users\xiaosong\Documents\Academy\CM\FEM\test.inp
+ C:\Users\xiaosong\Documents\Academy\CM\HW4\board-rect-lag-low.inp
 *NODE
 1, 0, 0.1, 0
 2, 0.1, 0, 0
@@ -338,7 +338,7 @@
 91, 92, 93, 94, 95, 96, 97, 98, 99, 
 *ELSET,ELSET=Load:P=-1.0e6
 100, 101, 102, 103, 104, 105, 
-*ELSET,ELSET=Material:G=2.1e11:nu=0.3
+*ELSET,ELSET=Material:E=2.1e11:nu=0.3
 122, 124, 126, 128, 130, 132, 134, 136, 138, 140, 
 142, 144, 146, 148, 150, 152, 154, 156, 158, 160, 
 162, 164, 166, 168, 170, 172, 174, 176, 178, 180, 

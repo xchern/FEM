@@ -63,7 +63,7 @@ def T3D3Force(pos, P):
     # *0  *1  *2
     r = np.zeros(6)
     XP = NPs.T @ pos # (sample point, {x',y'})
-    ds = (np.array([[0, 1],[-1, 0]]) @ XP.T).T
+    ds = (np.array([[0, -1],[1, 0]]) @ XP.T).T
     for w, N in zip(ws, Ns[0]):
         r[:2] += N * ds[0] * w
     for w, N in zip(ws, Ns[1]):
