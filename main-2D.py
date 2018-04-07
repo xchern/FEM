@@ -3,7 +3,7 @@ from scipy import sparse
 import matplotlib.pyplot as plt
 
 from readInp import readInpFile
-from Element2D import CPS9StiffMat, T3D3Force
+from Element2D import *
 
 filename = 'test.inp'
 
@@ -52,8 +52,12 @@ for t in tags:
         print(t, para)
         for el in elementSets[t]:
             tp, ns = elements[el]
-            assert tp == 'CPS4' and len(ns) == 9
-            subMat = CPS9StiffMat(nodes[ns], para['E'], para['nu'])
+            if tp == 'CPS4' and len(ns) == 9:
+                subMat = CPS9StiffMat(nodes[ns], para['E'], para['nu'])
+            elif tp == 'CPS4' and len(ns) == 4:
+                subMat = CPS4StiffMat(nodes[ns], para['E'], para['nu'])
+            else:
+                raise Exception('invalid element')
             indices = [i for n in ns for i in (2 * n, 2 * n + 1)]
             c, r = np.meshgrid(indices, indices)
             col += c.flatten().tolist()
@@ -72,8 +76,12 @@ for t in tags:
         print(t, para)
         for el in elementSets[t]:
             tp, ns = elements[el]
-            assert tp == 'T3D3' and len(ns) == 3
-            subRhs = T3D3Force(nodes[ns], para['P'])
+            if tp == 'T3D3' and len(ns) == 3:
+                subRhs = T3D3Force(nodes[ns], para['P'])
+            elif tp == 'T3D2' and len(ns) == 2:
+                subRhs = T3D2Force(nodes[ns], para['P'])
+            else:
+                raise Exception('invalid element')
             indices = [i for n in ns for i in (2 * n, 2 * n + 1)]
             rhs[indices] += subRhs
 
@@ -89,7 +97,7 @@ for t in tags:
         print(t, para)
         for el in elementSets[t]:
             tp, ns = elements[el]
-            assert tp == 'T3D3' and len(ns) == 3
+            #assert tp == 'T3D3' and len(ns) == 3
             if 'u' in para:
                 assert para['u'] == 0
                 for ni in ns:
@@ -127,7 +135,7 @@ def showLoad():
     plt.colorbar()
     plt.show()
 
-# showLoad()
+showLoad()
 
 print("solving linear system")
 import scipy.sparse.linalg
