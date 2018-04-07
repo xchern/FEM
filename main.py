@@ -1,21 +1,48 @@
+import sys
 import numpy as np
 from scipy import sparse
+import matplotlib.pyplot as plt
 
 from readInp import readInpFile
-from Element import CPS9StiffMat, T3D3Force
+from Element2D import *
 
-filename = 'test.inp'
+if len(sys.argv) == 1:
+    filename = 'test.inp'
+else:
+    filename = sys.argv[1]
 
-nodes, _, elements, elementSets = readInpFile(filename)
+nodes, nodeSets, elements, elementSets = readInpFile(filename)
+nodes = nodes[:,:2]
+print(len(nodes), "nodes")
+print(len(elements), "elements")
+
+def showShape():
+    plt.subplot(121).set_aspect('equal')
+    plt.scatter(nodes[:,0], nodes[:,1])
+    for k in list(nodeSets)[::-1]:
+        nodeSet = nodes[nodeSets[k]]
+        plt.scatter(nodeSet[:,0], nodeSet[:,1])
+    plt.legend(['all'] + list(nodeSets)[::-1], loc='best')
+    for i, p in enumerate(nodes):
+        plt.text(p[0], p[1], r'$\leftarrow$'+str(i))
+
+    plt.subplot(122).set_aspect('equal')
+    for e in elements:
+        nL = nodes[e[1]]
+        plt.plot(nL[:,0].T, nL[:,1].T)
+    plt.show()
 
 nN = len(nodes)
+
+if nN < 100:
+    showShape()
 
 print('constructing linear system...')
 # construct linear system
 val = []
 row = []
 col = []
-rhs = np.zeros(nN * 3)
+rhs = np.zeros(nN * 2)
 
 print('constructing matrix...')
 # Material
@@ -29,14 +56,18 @@ for t in tags:
         print(t, para)
         for el in elementSets[t]:
             tp, ns = elements[el]
-            assert tp == 'CPS4' and len(ns) == 9
-            subMat = CPS9StiffMat(nodes[ns], para['G'], para['nu'])
-            indices = [i for n in ns for i in (3 * n, 3 * n + 1, 3 * n + 2)]
+            if tp == 'CPS4' and len(ns) == 9:
+                subMat = CPS9StiffMat(nodes[ns], para['E'], para['nu'])
+            elif tp == 'CPS4' and len(ns) == 4:
+                subMat = CPS4StiffMat(nodes[ns], para['E'], para['nu'])
+            else:
+                raise Exception('invalid element {} with {} nodes'.format(tp, len(ns)))
+            indices = [i for n in ns for i in (2 * n, 2 * n + 1)]
             c, r = np.meshgrid(indices, indices)
             col += c.flatten().tolist()
             row += r.flatten().tolist()
             val += subMat.flatten().tolist()
-mat = sparse.coo_matrix((val, (row, col)), shape=(nN * 3, nN * 3))
+mat = sparse.coo_matrix((val, (row, col)), shape=(nN * 2, nN * 2))
 
 print('constructing rhs...')
 # Load
@@ -49,9 +80,13 @@ for t in tags:
         print(t, para)
         for el in elementSets[t]:
             tp, ns = elements[el]
-            assert tp == 'T3D3' and len(ns) == 3
-            subRhs = T3D3Force(nodes[ns], para['P'])
-            indices = [i for n in ns for i in (3 * n, 3 * n + 1, 3 * n + 2)]
+            if tp == 'T3D3' and len(ns) == 3:
+                subRhs = T3D3Force(nodes[ns], para['P'])
+            elif tp == 'T3D2' and len(ns) == 2:
+                subRhs = T3D2Force(nodes[ns], para['P'])
+            else:
+                raise Exception('invalid element {} with {} nodes'.format(tp, len(ns)))
+            indices = [i for n in ns for i in (2 * n, 2 * n + 1)]
             rhs[indices] += subRhs
 
 print('applying constraints...')
@@ -66,19 +101,15 @@ for t in tags:
         print(t, para)
         for el in elementSets[t]:
             tp, ns = elements[el]
-            assert tp == 'T3D3' and len(ns) == 3
+            #assert tp == 'T3D3' and len(ns) == 3
             if 'u' in para:
                 assert para['u'] == 0
                 for ni in ns:
-                    indices.append(ni * 3)
+                    indices.append(ni * 2)
             if 'v' in para:
                 assert para['v'] == 0
                 for ni in ns:
-                    indices.append(ni * 3 + 1)
-            if 'w' in para:
-                assert para['w'] == 0
-                for ni in ns:
-                    indices.append(ni * 3 + 2)
+                    indices.append(ni * 2 + 1)
 indices = list(set(indices))
 indices.sort()
 
@@ -97,12 +128,34 @@ mat = mat.tocsr()
 
 rhs[indices] = 0
 
+def showLoad():
+    plt.subplot(121).set_aspect('equal')
+    plt.title("F_u")
+    plt.scatter(nodes[:,0],nodes[:,1],c=rhs[::2])
+    plt.colorbar()
+    plt.subplot(122).set_aspect('equal')
+    plt.title("F_v")
+    plt.scatter(nodes[:,0],nodes[:,1],c=rhs[1::2])
+    plt.colorbar()
+    plt.show()
+
+showLoad()
+
 print("solving linear system")
 import scipy.sparse.linalg
 
-# TODO which is better?
-# x = sparse.linalg.spsolve(mat, rhs)
-x, e = sparse.linalg.cgs(mat, rhs)
-print('error', e)
+# spsolve is more stable and fast than cg/cgs
+x = sparse.linalg.spsolve(mat, rhs)
 
-x.shape = (nN, 3)
+x.shape = (nN, 2)
+
+# show result
+plt.subplot(121).set_aspect('equal')
+plt.title("u")
+plt.scatter(nodes[:,0],nodes[:,1],c=x[:,0])
+plt.colorbar()
+plt.subplot(122).set_aspect('equal')
+plt.title("v")
+plt.scatter(nodes[:,0],nodes[:,1],c=x[:,1])
+plt.colorbar()
+plt.show()
