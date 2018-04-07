@@ -132,10 +132,8 @@ def showLoad():
 print("solving linear system")
 import scipy.sparse.linalg
 
-# TODO which is better?
+# spsolve is more stable and fast than cg/cgs
 x = sparse.linalg.spsolve(mat, rhs)
-# x, e = sparse.linalg.cgs(mat, rhs)
-# print('error', e)
 
 x.shape = (nN, 2)
 
