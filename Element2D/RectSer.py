@@ -1,8 +1,10 @@
 import numpy as np
 
 # Gauss quadrature
-xs = np.array([-np.sqrt(3/5), 0, np.sqrt(3/5)])
-ws = np.array([5/9, 8/9, 5/9])
+# xs = np.array([-np.sqrt(3/5), 0, np.sqrt(3/5)])
+# ws = np.array([5/9, 8/9, 5/9])
+xs = np.array([-np.sqrt(1/3), np.sqrt(1/3)])
+ws = np.array([1, 1])
 
 point = np.array([(a, b)
     for b in xs
