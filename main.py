@@ -58,8 +58,14 @@ for t in tags:
             tp, ns = elements[el]
             if tp == 'CPS4' and len(ns) == 9:
                 subMat = CPS9StiffMat(nodes[ns], para['E'], para['nu'])
+            elif tp == 'CPS8' and len(ns) == 8:
+                subMat = CPS8StiffMat(nodes[ns], para['E'], para['nu'])
             elif tp == 'CPS4' and len(ns) == 4:
                 subMat = CPS4StiffMat(nodes[ns], para['E'], para['nu'])
+            elif tp == 'CPS6' and len(ns) == 6:
+                subMat = CPS6StiffMat(nodes[ns], para['E'], para['nu'])
+            elif tp == 'CPS3' and len(ns) == 3:
+                subMat = CPS3StiffMat(nodes[ns], para['E'], para['nu'])
             else:
                 raise Exception('invalid element {} with {} nodes'.format(tp, len(ns)))
             indices = [i for n in ns for i in (2 * n, 2 * n + 1)]
