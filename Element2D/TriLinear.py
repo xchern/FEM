@@ -1,15 +1,6 @@
 import numpy as np
 
-def CPS3StiffMat(pos, E, nu):
-    assert pos.shape == (3,2) #(node, {u,v})
-    D = np.array([
-        [1, nu, 0],
-        [nu, 1, 0],
-        [0, 0, (1-nu)/2],
-        ]) * (E / (1 - nu**2))
-
-    r = np.zeros((6,6))
-
+def NGradsFromPos(pos):
     pos01 = pos[0] - pos[1]
     pos12 = pos[1] - pos[2]
     pos20 = pos[2] - pos[0]
@@ -21,14 +12,48 @@ def CPS3StiffMat(pos, E, nu):
     grad2 = pos20 - pos01.dot(pos20)/pos01.dot(pos01) * pos01
     grad2 /= grad2.dot(grad2)
 
-    NGrad = np.array([grad0, grad1, grad2]) # (node, {partial x, partial y})
+    NGrads = np.array([grad0, grad1, grad2]) # (node, {partial x, partial y})
+    return NGrads
+
+def CPS3StiffMat(pos, E, nu):
+    assert pos.shape == (3,2) #(node, {u,v})
+    D = np.array([
+        [1, nu, 0],
+        [nu, 1, 0],
+        [0, 0, (1-nu)/2],
+        ]) * (E / (1 - nu**2))
+
+    r = np.zeros((6,6))
+    NGrads = NGradsFromPos(pos)
 
     B = np.zeros((3, 6))
-    B[0,::2] = NGrad[:,0]
-    B[1,1::2] = NGrad[:,1]
-    B[2,::2] = NGrad[:,1]
-    B[2,1::2] = NGrad[:,0]
+    B[0,::2] = NGrads[:,0]
+    B[1,1::2] = NGrads[:,1]
+    B[2,::2] = NGrads[:,1]
+    B[2,1::2] = NGrads[:,0]
 
-    r += B.T @ D @ B * np.abs(np.linalg.det(np.array((pos01, pos12)))) / 2
+    r += B.T @ D @ B * np.abs(np.linalg.det(np.array((pos[1] - pos[0], pos[2] - pos[0])))) / 2
 
     return r
+
+def CPS3NodalStress(pos, E, nu, disp):
+    assert pos.shape == (3,2) #(node, {u,v})
+    assert disp.shape == (3,2) #(node, {u,v})
+    D = np.array([
+        [1, nu, 0],
+        [nu, 1, 0],
+        [0, 0, (1-nu)/2],
+        ]) * (E / (1 - nu**2))
+
+    stress = np.zeros((3, 3))
+
+    NGrads = NGradsFromPos(pos)
+    B = np.zeros((3, 6))
+    B[0,::2] = NGrads[:,0]
+    B[1,1::2] = NGrads[:,1]
+    B[2,::2] = NGrads[:,1]
+    B[2,1::2] = NGrads[:,0]
+
+    stress[:] = D @ B @ disp.flatten()
+
+    return stress

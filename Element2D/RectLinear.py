@@ -30,7 +30,7 @@ NP2Ds = np.array([[[
     )
 
 def CPS4StiffMat(pos, E, nu):
-    assert pos.shape == (4,2) #(node, {u,v})
+    assert pos.shape == (4,2) #(node, {x,y})
     D = np.array([
         [1, nu, 0],
         [nu, 1, 0],
@@ -52,6 +52,32 @@ def CPS4StiffMat(pos, E, nu):
             B[2,1::2] = NGrad[:,0]
             r += B.T @ D @ B * (np.linalg.det(J.T) * w1 * w2)
     return r
+
+def CPS4NodalStress(pos, E, nu, disp):
+    assert pos.shape == (4,2) #(node, {x,y})
+    assert disp.shape == (4,2) #(node, {u,v})
+    D = np.array([
+        [1, nu, 0],
+        [nu, 1, 0],
+        [0, 0, (1-nu)/2],
+        ]) * (E / (1 - nu**2))
+    stressS = np.zeros((4, 3))
+
+    # (sample_xi, sample_eta, {partial xi, partial eta}, {x, y})
+    Js = np.moveaxis((NP2Ds.T @ pos).T, 0, -1)
+
+    for xii, w1, J_ in zip(range(2), ws, Js):
+        for etai, w2, J in zip(range(2), ws, J_):
+            NP2D = NP2Ds[:, xii, etai, :] # (node, {partial xi, partial eta})
+            NGrad = NP2D @ np.linalg.inv(J.T) # (node, {partial x, partial y})
+            B = np.zeros((3, 8))
+            B[0,::2] = NGrad[:,0]
+            B[1,1::2] = NGrad[:,1]
+            B[2,::2] = NGrad[:,1]
+            B[2,1::2] = NGrad[:,0]
+            stressS[xii*2 + etai] += D @ B @ disp.flatten()
+
+    return np.linalg.pinv(np.reshape(N2Ds,(4,4)).T) @ stressS
 
 def T3D2Force(pos, P):
     assert pos.shape == (2,2)

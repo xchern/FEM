@@ -151,17 +151,68 @@ print("solving linear system")
 import scipy.sparse.linalg
 
 # spsolve is more stable and fast than cg/cgs
-x = sparse.linalg.spsolve(mat, rhs)
+disp = sparse.linalg.spsolve(mat, rhs)
 
-x.shape = (nN, 2)
+disp.shape = (nN, 2)
 
-# show result
-plt.subplot(121).set_aspect('equal')
+print('calc nodal stress')
+# Material
+tags = list(elementSets)
+stress = np.zeros((disp.shape[0], 3))
+count = np.zeros(disp.shape[0], dtype=np.int)
+for t in tags:
+    if t.startswith("Material"):
+        para = {k: float(v)
+                for c in t.split(':')[1:]
+                for k,v in (c.split('='),)
+                }
+        print(t, para)
+        for el in elementSets[t]:
+            tp, ns = elements[el]
+            if tp == 'CPS4' and len(ns) == 9:
+                subStress = CPS9NodalStress(nodes[ns], para['E'], para['nu'], disp[ns])
+            elif tp == 'CPS8' and len(ns) == 8:
+                subStress = CPS8NodalStress(nodes[ns], para['E'], para['nu'], disp[ns])
+            elif tp == 'CPS4' and len(ns) == 4:
+                subStress = CPS4NodalStress(nodes[ns], para['E'], para['nu'], disp[ns])
+            elif tp == 'CPS6' and len(ns) == 6:
+                subStress = CPS6NodalStress(nodes[ns], para['E'], para['nu'], disp[ns])
+            elif tp == 'CPS3' and len(ns) == 3:
+                subStress = CPS3NodalStress(nodes[ns], para['E'], para['nu'], disp[ns])
+            else:
+                raise Exception('invalid element {} with {} nodes'.format(tp, len(ns)))
+            ns = ns[:len(subStress)]
+            stress[ns] += subStress
+            count[ns] += 1
+
+stress /= np.reshape(count, (count.size, 1))
+
+# show displacement
+plt.subplot(131).set_aspect('equal')
 plt.title("u")
-plt.scatter(nodes[:,0],nodes[:,1],c=x[:,0])
+plt.scatter(nodes[:,0],nodes[:,1],c=disp[:,0])
 plt.colorbar()
-plt.subplot(122).set_aspect('equal')
+plt.subplot(132).set_aspect('equal')
 plt.title("v")
-plt.scatter(nodes[:,0],nodes[:,1],c=x[:,1])
+plt.scatter(nodes[:,0],nodes[:,1],c=disp[:,1])
+plt.colorbar()
+plt.subplot(133).set_aspect('equal')
+plt.title("shape")
+plt.scatter(nodes[:,0],nodes[:,1],c='blue')
+plt.scatter(nodes[:,0]+1e4*disp[:,0],nodes[:,1]+1e4*disp[:,1],c='red')
+plt.show()
+
+# show stress
+plt.subplot(131).set_aspect('equal')
+plt.title("$\sigma_{xx}$")
+plt.scatter(nodes[:,0],nodes[:,1],c=stress[:,0])
+plt.colorbar()
+plt.subplot(132).set_aspect('equal')
+plt.title("$\sigma_{yy}$")
+plt.scatter(nodes[:,0],nodes[:,1],c=stress[:,1])
+plt.colorbar()
+plt.subplot(133).set_aspect('equal')
+plt.title("$\sigma_{xy}$")
+plt.scatter(nodes[:,0],nodes[:,1],c=stress[:,2])
 plt.colorbar()
 plt.show()

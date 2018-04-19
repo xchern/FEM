@@ -57,6 +57,35 @@ def CPS9StiffMat(pos, E, nu):
             r += B.T @ D @ B * (np.linalg.det(J.T) * w1 * w2)
     return r
 
+
+def CPS9NodalStress(pos, E, nu, disp):
+    assert pos.shape == (9,2) #(node, {x,y})
+    assert disp.shape == (9,2) #(node, {u,v})
+    D = np.array([
+        [1, nu, 0],
+        [nu, 1, 0],
+        [0, 0, (1-nu)/2],
+        ]) * (E / (1 - nu**2))
+
+    stressS = np.zeros((9,3))
+
+    # (sample_xi, sample_eta, {partial xi, partial eta}, {x, y})
+    Js = np.moveaxis((NP2Ds.T @ pos).T, 0, -1)
+
+    for xii, w1, J_ in zip(range(3), ws, Js):
+        for etai, w2, J in zip(range(3), ws, J_):
+            NP2D = NP2Ds[:, xii, etai, :] # (node, {partial xi, partial eta})
+            NGrad = NP2D @ np.linalg.inv(J.T) # (node, {partial x, partial y})
+            B = np.zeros((3, 18))
+            B[0,::2] = NGrad[:,0]
+            B[1,1::2] = NGrad[:,1]
+            B[2,::2] = NGrad[:,1]
+            B[2,1::2] = NGrad[:,0]
+            stressS[xii*3+etai] += D @ B @ disp.flatten()
+
+    return np.linalg.pinv(np.reshape(N2Ds, (9, 9)).T) @ stressS
+
+
 def T3D3Force(pos, P):
     assert pos.shape == (3,2)
     # very strange order

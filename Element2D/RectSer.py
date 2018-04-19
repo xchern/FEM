@@ -1,10 +1,8 @@
 import numpy as np
 
 # Gauss quadrature
-# xs = np.array([-np.sqrt(3/5), 0, np.sqrt(3/5)])
-# ws = np.array([5/9, 8/9, 5/9])
-xs = np.array([-np.sqrt(1/3), np.sqrt(1/3)])
-ws = np.array([1, 1])
+xs = np.array([-np.sqrt(3/5), 0, np.sqrt(3/5)])
+ws = np.array([5/9, 8/9, 5/9])
 
 point = np.array([(a, b)
     for b in xs
@@ -48,7 +46,7 @@ NP2Ds = np.array([
 #     plt.show()
 
 def CPS8StiffMat(pos, E, nu):
-    assert pos.shape == (8,2) #(node, {u,v})
+    assert pos.shape == (8,2) #(node, {x,y})
     D = np.array([
         [1, nu, 0],
         [nu, 1, 0],
@@ -59,7 +57,7 @@ def CPS8StiffMat(pos, E, nu):
     # (sample, {partial a, partial b}, {x, y})
     Js = np.moveaxis((NP2Ds.T @ pos).T, 0, -1)
 
-    for (a, b), w, J, si in zip(point, weight, Js, range(8)):
+    for (a, b), w, J, si in zip(point, weight, Js, range(9)):
             NP2D = NP2Ds[:, si, :] # (node, {partial a, partial b})
             NGrad = NP2D @ np.linalg.inv(J.T) # (node, {partial x, partial y})
             B = np.zeros((3, 16))
@@ -69,3 +67,29 @@ def CPS8StiffMat(pos, E, nu):
             B[2,1::2] = NGrad[:,0]
             r += B.T @ D @ B * (np.linalg.det(J.T) * w)
     return r
+
+def CPS8NodalStress(pos, E, nu, disp):
+    assert pos.shape == (8,2) #(node, {x,y})
+    assert disp.shape == (8,2) #(node, {u,v})
+    D = np.array([
+        [1, nu, 0],
+        [nu, 1, 0],
+        [0, 0, (1-nu)/2],
+        ]) * (E / (1 - nu**2))
+
+    stressS = np.zeros((9,3))
+
+    # (sample, {partial a, partial b}, {x, y})
+    Js = np.moveaxis((NP2Ds.T @ pos).T, 0, -1)
+
+    for (a, b), w, J, si in zip(point, weight, Js, range(9)):
+            NP2D = NP2Ds[:, si, :] # (node, {partial a, partial b})
+            NGrad = NP2D @ np.linalg.inv(J.T) # (node, {partial x, partial y})
+            B = np.zeros((3, 16))
+            B[0,::2] = NGrad[:,0]
+            B[1,1::2] = NGrad[:,1]
+            B[2,::2] = NGrad[:,1]
+            B[2,1::2] = NGrad[:,0]
+            stressS[si] += D @ B @ disp.flatten()
+
+    return np.linalg.pinv(Ns.T) @ stressS
