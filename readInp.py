@@ -3,19 +3,19 @@ import numpy as np
 def readInpFileRaw(filename):
     nodes = {}
     nodeSets = {}
+    elements = {}
+    elementSets = {}
     def nodeRead(t):
         i = int(t[0])
         v = tuple(map(float, t[1:]))
         nodes[i] = v
+        elements[i] = ('Node', [i])
     def nSetRead(t, tag):
         ns = list(map(int, t))
         if tag in nodeSets:
             nodeSets[tag] += ns
         else:
             nodeSets[tag] = ns
-
-    elements = {}
-    elementSets = {}
     def elementRead(t, tp, tag):
         i = int(t[0])
         v = list(map(int, t[1:]))

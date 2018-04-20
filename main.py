@@ -90,6 +90,10 @@ for t in tags:
                 subRhs = T3D3Force(nodes[ns], para['P'])
             elif tp == 'T3D2' and len(ns) == 2:
                 subRhs = T3D2Force(nodes[ns], para['P'])
+            elif tp == 'Node' and len(ns) == 1:
+                F_x = para['F_x'] if 'F_x' in para else 0
+                F_y = para['F_y'] if 'F_y' in para else 0
+                subRhs = np.array((F_x, F_y))
             else:
                 raise Exception('invalid element {} with {} nodes'.format(tp, len(ns)))
             indices = [i for n in ns for i in (2 * n, 2 * n + 1)]
@@ -136,11 +140,11 @@ rhs[indices] = 0
 
 def showLoad():
     plt.subplot(121).set_aspect('equal')
-    plt.title("F_u")
+    plt.title("F_x")
     plt.scatter(nodes[:,0],nodes[:,1],c=rhs[::2])
     plt.colorbar()
     plt.subplot(122).set_aspect('equal')
-    plt.title("F_v")
+    plt.title("F_y")
     plt.scatter(nodes[:,0],nodes[:,1],c=rhs[1::2])
     plt.colorbar()
     plt.show()
@@ -199,7 +203,10 @@ plt.colorbar()
 plt.subplot(133).set_aspect('equal')
 plt.title("shape")
 plt.scatter(nodes[:,0],nodes[:,1],c='blue')
-plt.scatter(nodes[:,0]+1e4*disp[:,0],nodes[:,1]+1e4*disp[:,1],c='red')
+
+extent_x, extent_y = nodes.max(axis=0) - nodes.min(axis=0)
+factor = 0.2 * max(extent_x, extent_y)/np.abs(disp).max()
+plt.scatter(nodes[:,0]+factor*disp[:,0],nodes[:,1]+factor*disp[:,1],c='red')
 plt.show()
 
 # show stress
