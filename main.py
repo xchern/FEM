@@ -32,6 +32,15 @@ def showShape():
         plt.plot(nL[:,0].T, nL[:,1].T)
     plt.show()
 
+def showPosWithData(p, data):
+    plt.scatter(p[:,0],p[:,1],c=data)
+    plt.colorbar(orientation="vertical", pad=0.25, aspect=30)
+
+    iMax, iMin = np.argmax(data), np.argmin(data)
+    plt.text(p[iMax,0], p[iMax,1], r'$\leftarrow$max=%.3e'%(data[iMax]))
+    plt.text(p[iMin,0], p[iMin,1], r'$\leftarrow$min=%.3e'%(data[iMin]))
+
+
 nN = len(nodes)
 
 if nN < 100:
@@ -141,12 +150,12 @@ rhs[indices] = 0
 def showLoad():
     plt.subplot(121).set_aspect('equal')
     plt.title("F_x")
-    plt.scatter(nodes[:,0],nodes[:,1],c=rhs[::2])
-    plt.colorbar()
+    showPosWithData(nodes, rhs[::2])
+
     plt.subplot(122).set_aspect('equal')
     plt.title("F_y")
-    plt.scatter(nodes[:,0],nodes[:,1],c=rhs[1::2])
-    plt.colorbar()
+    showPosWithData(nodes, rhs[1::2])
+
     plt.show()
 
 showLoad()
@@ -194,16 +203,15 @@ stress /= np.reshape(count, (count.size, 1))
 # show displacement
 plt.subplot(131).set_aspect('equal')
 plt.title("u")
-plt.scatter(nodes[:,0],nodes[:,1],c=disp[:,0])
-plt.colorbar()
+showPosWithData(nodes, disp[:,0])
+
 plt.subplot(132).set_aspect('equal')
 plt.title("v")
-plt.scatter(nodes[:,0],nodes[:,1],c=disp[:,1])
-plt.colorbar()
+showPosWithData(nodes, disp[:,1])
+
 plt.subplot(133).set_aspect('equal')
 plt.title("shape")
 plt.scatter(nodes[:,0],nodes[:,1],c='blue')
-
 extent_x, extent_y = nodes.max(axis=0) - nodes.min(axis=0)
 factor = 0.2 * max(extent_x, extent_y)/np.abs(disp).max()
 plt.scatter(nodes[:,0]+factor*disp[:,0],nodes[:,1]+factor*disp[:,1],c='red')
@@ -212,14 +220,13 @@ plt.show()
 # show stress
 plt.subplot(131).set_aspect('equal')
 plt.title("$\sigma_{xx}$")
-plt.scatter(nodes[:,0],nodes[:,1],c=stress[:,0])
-plt.colorbar()
+showPosWithData(nodes[count>0], stress[count>0,0])
+
 plt.subplot(132).set_aspect('equal')
 plt.title("$\sigma_{yy}$")
-plt.scatter(nodes[:,0],nodes[:,1],c=stress[:,1])
-plt.colorbar()
+showPosWithData(nodes[count>0], stress[count>0,1])
+
 plt.subplot(133).set_aspect('equal')
 plt.title("$\sigma_{xy}$")
-plt.scatter(nodes[:,0],nodes[:,1],c=stress[:,2])
-plt.colorbar()
+showPosWithData(nodes[count>0], stress[count>0,2])
 plt.show()
